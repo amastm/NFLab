@@ -67,7 +67,12 @@ def costFunction(chrm,caseID, writeResults = True):
   cost = np.sum(HD[:,0]>2)
   # cost = 1
   fitness =  1 /float(cost+.00000001)
-  results = [cost, fitness]
+  maxHD=HD[:,0].max()
+  avgHD=HD[:,0].mean()
+  stdHD=HD[:,0].std()
+  HD.sort()
+  medHD=HD[HD.size/2]
+  results = [cost, fitness, maxHD, avgHD,stdHD, medHD]
   return results 
 
 '''
@@ -108,8 +113,10 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
                         'gradientPonderation',
                         'exponent',
                         'gaussianAttenuation',
-                        'sigma'],'/tmp/GA-'+str(caseID)+'.csv')
-  l.exportEvaluation(['fitness',
+                        'sigma',
+                        t.strftime("%d/%m/%Y"),t.strftime("%H:%M:%S")
+                        ],'/tmp/GA-'+str(caseID)+'.csv')
+  l.exportEvaluation(['fitness','maxHD','avgHD','stdHD','medHD'
                         #'radiusNeedle',
                         #'lenghtNeedle',
                         #'distanceMax',
@@ -120,6 +127,7 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
                         #'exponent',
                         #'gaussianAttenuation',
                         #'sigma'
+                        t.strftime("%d/%m/%Y"),t.strftime("%H:%M:%S")
                         ],\
                         '/tmp/GA-'+str(caseID)+'-fitness.csv')
   firstTime = 1
