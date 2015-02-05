@@ -7,34 +7,36 @@ import operator
 import NeedleFinder
 import numpy as np
 import csv
-widget = slicer.modules.NeedleFinderWidget
-l = NeedleFinder.NeedleFinderLogic()
 import time as t
 
+# instantiate NF
+widget = slicer.modules.NeedleFinderWidget
+l = widget.logic
+
 path = [ 0 for i in range(100)]
+# table headers
+l.exportEvaluation(['nCP','maxHD','avgHD','stdHD',':','radiusNeedle',
+                        'lenghtNeedle',
+                        'distanceMax',
+                        'numberOfPointsPerNeedle',
+                        'nbRotatingIterations',
+                        'stepSize',
+                        'gradientPonderation',
+                        'exponent',
+                        'gaussianAttenuationButton',
+                        'sigma'], '/home/amastmeyer/'+str(caseID)+'-cost.csv')
 
-#Andres file system (cases copies from AMIGO share)
-path[24] = '/home/amastmeyer/Pictures/Case  024/NRRD/Manual/2013-02-25-Scene-without-CtrPt.mrml'
-path[29] = '/home/amastmeyer/Pictures/Case  029/NRRD/Manual/2013-02-26-Scene-without-CtrPts.mrml'
-path[30] = '/home/amastmeyer/Pictures/Case  030/NRRD/Manual/2013-02-26-Scene-without-CtrPt.mrml'
-path[31] = '/home/amastmeyer/Pictures/Case  031/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-path[34] = '/home/amastmeyer/Pictures/Case  034/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-path[35] = '/home/amastmeyer/Pictures/Case  035/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-path[37] = '/home/amastmeyer/Pictures/Case  037/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-path[38] = '/home/amastmeyer/Pictures/Case  038/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-path[40] = '/home/amastmeyer/Pictures/Case  040/NRRD/Manual/2013-02-27-Scene-without-CtrPts.mrml'
-
-#MICCAI13 results in Andres files
-path[24] = '/home/amastmeyer/Pictures/Case  024/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[28] = '/home/amastmeyer/Pictures/Case  028/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[29] = '/home/amastmeyer/Pictures/Case  029/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[30] = '/home/amastmeyer/Pictures/Case  030/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[31] = '/home/amastmeyer/Pictures/Case  031/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[33] = '/home/amastmeyer/Pictures/Case  033/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[34] = '/home/amastmeyer/Pictures/Case  034/NRRD/Auto-Eval-LB/SceneNoCtrlPts.mrml'
-path[37] = '/home/amastmeyer/Pictures/Case  037/NRRD/Manual Alireza/SceneNoCtrlPts.mrml'
-path[38] = '/home/amastmeyer/Pictures/Case  038/NRRD/Manual Alireza/SceneNoCtrlPts.mrml'
-path[40] = '/home/amastmeyer/Pictures/Case  040/NRRD/Manual Alireza/SceneNoCtrlPts.mrml'
+#Andres file system (cases copies from AMIGO share) MICCAI13 results (LB/AM)
+path[24] = '/home/amastmeyer/Pictures/MICCAI13/Case  024/NRRD/Auto-Eval-LB/2013-02-28-Scene.mrml'
+path[28] = '/home/amastmeyer/Pictures/MICCAI13/Case  028/NRRD/Auto-Eval-LB/2013-02-28-Scene.mrml'
+path[29] = '/home/amastmeyer/Pictures/MICCAI13/Case  029/NRRD/Auto-Eval-LB/2013-02-26-Scene.mrml'
+path[30] = '/home/amastmeyer/Pictures/MICCAI13/Case  030/NRRD/Auto-Eval-LB/2013-02-26-Scene.mrml'
+path[31] = '/home/amastmeyer/Pictures/MICCAI13/Case  031/NRRD/Auto-Eval-LB/2013-02-27-Scene.mrml'
+path[33] = '/home/amastmeyer/Pictures/MICCAI13/Case  033/NRRD/Auto-Eval-LB/2013-02-27-Scene.mrml'
+path[34] = '/home/amastmeyer/Pictures/MICCAI13/Case  034/NRRD/Auto-Eval-LB/2013-02-27-Scene.mrml'
+path[37] = '/home/amastmeyer/Pictures/MICCAI13/Case  037/NRRD/Manual Alireza/2013-02-27-Scene.mrml'
+path[38] = '/home/amastmeyer/Pictures/MICCAI13/Case  038/NRRD/Manual Alireza/2013-02-27-Scene.mrml'
+path[40] = '/home/amastmeyer/Pictures/MICCAI13/Case  040/NRRD/Manual Alireza/2013-02-27-Scene.mrml'
 
 if Guillaume: #Guillaumes file system
   path[24] = '/Users/guillaume/Dropbox/AMIGO Gyn Data NRRD (1)/Case 24 NRRD/Manual/2013-02-25-Scene-without-CtrPt.mrml'
@@ -55,25 +57,22 @@ def resetNeedleDetection(l, script=False):
   l.previousValues=[[0,0,0]]
   l.round=1
   # reset report table
-  l.table =None
+  l.table=None
   l.row=0
-  l.initTableView()
-  
+  #l.initTableView()
+
 
 def costFunction(chrm,caseID, writeResults = True):
   resetNeedleDetection(l,script=True)
-  widget.radiusNeedleParameter.setValue(chrm[1])
-  widget.sigmaValue.setValue(chrm[2]) # change parameter sigma
-  widget.gradientPonderation.setValue(chrm[3])
-  widget.exponent.setValue(chrm[4])
+  #widget.radiusNeedleParameter.setValue(chrm[1])
+  #widget.sigmaValue.setValue(chrm[2]) # change parameter sigma
+  #widget.gradientPonderation.setValue(chrm[3])
+  #widget.exponent.setValue(chrm[4])
   widget.numberOfPointsPerNeedle.setValue(chrm[0])
   l.startValidation(script=True)
   results = l.evaluate(script=True) # calculate HD distances
   if writeResults:
-    if Guillaume:
-      l.exportEvaluation(results, '/Users/guillaume/Projects/github/NeedleFinderProjectWeek/'+str(caseID)+'.csv')
-    else:
-      l.exportEvaluation(results, '/home/amastmeyer/'+str(caseID)+'-cost.csv')
+    l.exportEvaluation(results, '/tmp/GA-'+str(caseID)+'.csv')
   HD=np.array(results)
   # print HD
   cost = np.sum(HD[:,0]>2)
@@ -103,13 +102,37 @@ Center ponderation :
 
 rangeTable=[]
 rangeTable.append([3,12])
-rangeTable.append([1,5])
-rangeTable.append([1,40])
-rangeTable.append([0,25])
-rangeTable.append([0,10])
+#rangeTable.append([1,5])
+#rangeTable.append([1,40])
+#rangeTable.append([0,25])
+#rangeTable.append([0,10])
 
 
 def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
+  # write table headers
+  l.exportEvaluation(['HD','ID1','ID2','radiusNeedle',
+                        'lenghtNeedle',
+                        'distanceMax',
+                        'numberOfPointsPerNeedle',
+                        'nbRotatingIterations',
+                        'stepSize',
+                        'gradientPonderation',
+                        'exponent',
+                        'gaussianAttenuation',
+                        'sigma'],'/tmp/GA-'+str(caseID)+'.csv')
+  l.exportEvaluation(['fitness',
+                        #'radiusNeedle',
+                        #'lenghtNeedle',
+                        #'distanceMax',
+                        'numberOfPointsPerNeedle',
+                        #'nbRotatingIterations',
+                        #'stepSize',
+                        #'gradientPonderation',
+                        #'exponent',
+                        #'gaussianAttenuation',
+                        #'sigma'
+                        ],\
+                        '/tmp/GA-'+str(caseID)+'-fitness.csv')
   firstTime = 1
   slicer.util.loadScene( path[caseID] )
   # [ctrlpt, radius, sigma, neigh, center]
@@ -118,7 +141,8 @@ def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
   tried_params = []
   tried_fitness = []
   for i in range(popSize):
-    sample_pop.append([np.random.randint(3,12), np.random.randint(1,6), np.random.randint(1,40), np.random.randint(0,25), np.random.randint(0,10)]) # a feasible solution
+    #sample_pop.append([np.random.randint(3,12), np.random.randint(1,6), np.random.randint(1,40), np.random.randint(0,25), np.random.randint(0,10)]) # a feasible solution
+    sample_pop.append([np.random.randint(3,12)]) # a feasible solution
   if firstTime:
     start = t.time()
     costFunction(sample_pop[0], caseID, False)
@@ -145,10 +169,7 @@ def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
         tried_params.append(params)
         tried_fitness.append(fitness)
         fitness_list.append(fitness)
-        if Guillaume:
-          l.exportEvaluation(params+[fitness], '/Users/guillaume/Projects/github/NeedleFinderProjectWeek/'+str(caseID)+'-fitness.csv')
-        else:
-          l.exportEvaluation(params+[fitness], '/home/amastmeyer/'+str(caseID)+'-fitness.csv')
+        l.exportEvaluation([fitness]+params, '/tmp/GA-'+str(caseID)+'-fitness.csv')
         # print fitness_list
         fitness_sum = reduce( operator.add, fitness_list)
         prob_list =map((lambda x: x/fitness_sum),fitness_list)
