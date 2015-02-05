@@ -1,6 +1,6 @@
 Guillaume=False #for file paths
 
-print "example usage in slicer python console: geneticAlgorithm(24)"
+print "example usage in slicer python console: geneticAlgorithm(24) ============"
 
 import random, copy
 import operator
@@ -14,17 +14,6 @@ widget = slicer.modules.NeedleFinderWidget
 l = widget.logic
 
 path = [ 0 for i in range(100)]
-# table headers
-l.exportEvaluation(['nCP','maxHD','avgHD','stdHD',':','radiusNeedle',
-                        'lenghtNeedle',
-                        'distanceMax',
-                        'numberOfPointsPerNeedle',
-                        'nbRotatingIterations',
-                        'stepSize',
-                        'gradientPonderation',
-                        'exponent',
-                        'gaussianAttenuationButton',
-                        'sigma'], '/home/amastmeyer/'+str(caseID)+'-cost.csv')
 
 #Andres file system (cases copies from AMIGO share) MICCAI13 results (LB/AM)
 path[24] = '/home/amastmeyer/Pictures/MICCAI13/Case  024/NRRD/Auto-Eval-LB/2013-02-28-Scene.mrml'
@@ -108,7 +97,7 @@ rangeTable.append([3,12])
 #rangeTable.append([0,10])
 
 
-def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
+def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
   # write table headers
   l.exportEvaluation(['HD','ID1','ID2','radiusNeedle',
                         'lenghtNeedle',
@@ -140,6 +129,7 @@ def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
   sample_pop =[]
   tried_params = []
   tried_fitness = []
+  nGenes=1 #5
   for i in range(popSize):
     #sample_pop.append([np.random.randint(3,12), np.random.randint(1,6), np.random.randint(1,40), np.random.randint(0,25), np.random.randint(0,10)]) # a feasible solution
     sample_pop.append([np.random.randint(3,12)]) # a feasible solution
@@ -149,14 +139,14 @@ def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
     firstTime = 0
     finish = t.time()
     duration = finish - start
-    expectedDuration = duration * populationSize * nbOfGenerations
+    expectedDuration = duration * populationSize * nGenerations
     durationString = (expectedDuration.__divmod__(3600)[0]).__format__('.0f') +'h'
     durationString += (expectedDuration.__divmod__(60)[0]).__format__('.0f')+ 'min'
     durationString += (expectedDuration.__divmod__(60)[1]).__format__('.0f')+ 's'
     message = 'The Genetic Algorithm will take approximately ' +durationString+ ' to complete.'
     message += '\n Do you want to continue?'
     ret = messageBox = qt.QMessageBox.question( qt.QDialog(), 'Attention',message,qt.QMessageBox.Ok, qt.QMessageBox.Cancel)
-  for generation in range(nbOfGenerations):
+  for generation in range(nGenerations):
     if ret != qt.QMessageBox.Ok:
       break
     # print "generation: ",generation
@@ -188,27 +178,31 @@ def geneticAlgorithm(caseID, populationSize=10, nbOfGenerations=100):
         if rn<= cum_prob:
           selected.append(j)
           break
-    # simple crossover (1 point)
-    parent1=sample_pop[selected[np.random.randint(0,len(selected))]]
-    parent2=sample_pop[selected[np.random.randint(0,len(selected))]]
-    # for i in range(5):
-    #   offspring[i]=[]
-    # crossover point
-    pt = np.random.randint(0,5)
-    offspring1 = parent1[:pt] + parent2[pt:]
-    offspring2 = parent2[:pt] + parent1[pt:]
-    sample_pop.append(offspring1)
-    sample_pop.append(offspring2)
-    # multi crossover points 
-    pt1 = np.random.randint(0,5)
-    pt2 = np.random.randint(pt1,5)
-    offspring1 = parent1[:pt1] + parent2[pt1:pt2] + parent1[pt2:]
-    offspring2 = parent2[:pt1] + parent1[pt1:pt2] + parent2[pt2:]
-    sample_pop.append(offspring1)
-    sample_pop.append(offspring2)
+    if nGenes>1:
+      # simple crossover (1 point)
+      while True:
+        parent1=sample_pop[selected[np.random.randint(0,len(selected))]]
+        parent2=sample_pop[selected[np.random.randint(0,len(selected))]]
+        if parent1!=parent2: break
+      # for i in range(nGenes):
+      #   offspring[i]=[]
+      # crossover point
+      pt = np.random.randint(0,nGenes)
+      offspring1 = parent1[:pt] + parent2[pt:]
+      offspring2 = parent2[:pt] + parent1[pt:]
+      sample_pop.append(offspring1)
+      sample_pop.append(offspring2)
+    if nGenes>2:
+      # multi crossover points 
+      pt1 = np.random.randint(0,nGenes-1)
+      pt2 = np.random.randint(pt1+1,nGenes)
+      offspring1 = parent1[:pt1] + parent2[pt1:pt2] + parent1[pt2:]
+      offspring2 = parent2[:pt1] + parent1[pt1:pt2] + parent2[pt2:]
+      sample_pop.append(offspring1)
+      sample_pop.append(offspring2)
     # value mutation
     chrm = sample_pop[selected[np.random.randint(0, len(selected))]]
-    element_position = random.randint(0, len(chrm)-1 )
+    element_position = random.randint(0, len(chrm) )
     chrm[element_position] = np.random.randint(rangeTable[element_position][0], rangeTable[element_position][1] )
     # print "Population size: ", len(sample_pop)
   #ideas for generation stop criterion:
