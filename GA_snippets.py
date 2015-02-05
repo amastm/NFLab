@@ -2,16 +2,19 @@ Guillaume=False #for file paths
 
 print "example usage in slicer python console: geneticAlgorithm(24) ============"
 
-import random, copy
 import operator
-import NeedleFinder
 import numpy as np
 import csv
 import time as t
 
-# instantiate NF
-widget = slicer.modules.NeedleFinderWidget
-l = widget.logic
+# get instance of NF
+try:
+  widget = slicer.modules.NeedleFinderWidget
+  l = widget.logic
+except: 
+  print "**********************************************************"
+  print "load needle finder from modules menu first, then try again" 
+  print "**********************************************************"
 
 path = [ 0 for i in range(100)]
 
@@ -43,6 +46,12 @@ def resetNeedleDetection(l, script=False):
     nodes = slicer.util.getNodes('python-catch*')
     for node in nodes.values():
       slicer.mrmlScene.RemoveNode(node)
+  # remove old control pts from scene
+  tempFidNodes = slicer.mrmlScene.GetNodesByName('.')
+  for i in range(tempFidNodes.GetNumberOfItems()):
+    node = tempFidNodes.GetItemAsObject(i)
+    if node:
+      slicer.mrmlScene.RemoveNode(node)
   l.previousValues=[[0,0,0]]
   l.round=1
   # reset report table
@@ -70,8 +79,8 @@ def costFunction(chrm,caseID, writeResults = True):
   maxHD=HD[:,0].max()
   avgHD=HD[:,0].mean()
   stdHD=HD[:,0].std()
-  HD.sort()
-  medHD=HD[HD.size/2]
+  sl=np.sort(HD[:,0])
+  medHD=sl[sl.size/2]
   results = [cost, fitness, maxHD, avgHD,stdHD, medHD]
   return results 
 
@@ -82,7 +91,7 @@ Number of control points:
 3 -> 12  +1 int 
 
 Radius (mm):
-0.5 -> 5  +0.5  
+0.5 -> 5  +0.5
 
 Sigma :
 1 -> 40 +1 int 
@@ -114,19 +123,15 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
                         'exponent',
                         'gaussianAttenuation',
                         'sigma',
+                        'algoV',
                         t.strftime("%d/%m/%Y"),t.strftime("%H:%M:%S")
                         ],'/tmp/GA-'+str(caseID)+'.csv')
-  l.exportEvaluation(['fitness','maxHD','avgHD','stdHD','medHD'
-                        #'radiusNeedle',
-                        #'lenghtNeedle',
-                        #'distanceMax',
+  l.exportEvaluation(['cost','fitness','maxHD','avgHD','stdHD','medHD',
                         'numberOfPointsPerNeedle',
-                        #'nbRotatingIterations',
-                        #'stepSize',
-                        #'gradientPonderation',
-                        #'exponent',
-                        #'gaussianAttenuation',
+                        #'radiusNeedle',
                         #'sigma'
+                        #'gradientPonderation',
+                        #'gaussianAttenuation',
                         t.strftime("%d/%m/%Y"),t.strftime("%H:%M:%S")
                         ],\
                         '/tmp/GA-'+str(caseID)+'-fitness.csv')
@@ -163,11 +168,12 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
     for i in range(popSize):
       if not sample_pop[i] in tried_params: #to avoid doing several times the same calculation
         params = sample_pop[i]
-        fitness = costFunction(params, caseID)[1]
+        results = costFunction(params, caseID)
+        fitness = results[1]
         tried_params.append(params)
         tried_fitness.append(fitness)
         fitness_list.append(fitness)
-        l.exportEvaluation([fitness]+params, '/tmp/GA-'+str(caseID)+'-fitness.csv')
+        l.exportEvaluation(results+params, '/tmp/GA-'+str(caseID)+'-fitness.csv')
         # print fitness_list
         fitness_sum = reduce( operator.add, fitness_list)
         prob_list =map((lambda x: x/fitness_sum),fitness_list)
@@ -181,7 +187,7 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
     selected = []
     size = popSize #*0.75
     for i in xrange(size):
-      rn = random.random()
+      rn = np.random.random()
       for j, cum_prob in enumerate(cum_prob_list):
         if rn<= cum_prob:
           selected.append(j)
@@ -210,7 +216,7 @@ def geneticAlgorithm(caseID, populationSize=10, nGenerations=100):
       sample_pop.append(offspring2)
     # value mutation
     chrm = sample_pop[selected[np.random.randint(0, len(selected))]]
-    element_position = random.randint(0, len(chrm) )
+    element_position = np.random.randint(0, len(chrm) )
     chrm[element_position] = np.random.randint(rangeTable[element_position][0], rangeTable[element_position][1] )
     # print "Population size: ", len(sample_pop)
   #ideas for generation stop criterion:
